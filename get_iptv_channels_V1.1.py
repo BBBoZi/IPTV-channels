@@ -377,15 +377,18 @@ def process_channel_data(channels: List[Tuple[str, ...]]) -> Dict[str, List[str]
                         else:
                             url = f'{url}?fec={channel[10]}'
                     # 写入txt文件
-                    rtspUrl = channel[6].replace(
-                        "rtsp://", f'{RTP2HTTPD}/rtsp/')+'?playseek=${(b)yyyyMMddHHmmss}-${(e)yyyyMMddHHmmss}' if channel[4] == '1' else None
+                    rtspUrl = None
+                    if channel[4] == '1' and channel[6]:
+                        rtspUrl = channel[6].replace("rtsp://", f'{RTP2HTTPD}/rtsp/', 1)
+                        sep = '&' if '?' in rtspUrl else '?'
+                        rtspUrl = rtspUrl + sep + 'playseek=${(b)yyyyMMddHHmmss}-${(e)yyyyMMddHHmmss}'
                     if rtspUrl is not None:  # 支持时移的源
                         ftxt.write(f'{name},{rtspUrl}#{url}\n')
                     else:
                         ftxt.write(f'{name},{url}\n')
                     m3uPlaybackFormat = f'catchup="default" catchup-source="{rtspUrl}"' if rtspUrl is not None else ""
                     # 写入m3u文件
-                    fm3u.write(f'#EXTINF:-1 group-title="{category}" {m3uPlaybackFormat}, {name}\n{url}\n')
+                    fm3u.write(f'#EXTINF:-1 group-title="{category}" {m3uPlaybackFormat},{name}\n{url}\n')
                     
                     # 记录频道信息
                     channel_ids.append([channel[0], name, channel[2]])
